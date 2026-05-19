@@ -1,0 +1,131 @@
+---
+title: "Analyse Électorale (2020 - 2024)"
+format: html
+toc: true
+---
+
+## 1. Préparation et Nettoyage des Données
+
+```{r extraction_cleaning, echo=FALSE}
+#| message: false
+#| warning: false
+source("extraction_cleaning.r")
+```
+
+**Source :**
+
+* Pour cette analyse, nous avons extrait et nettoyé les données électorales de Paris pour les élections municipales de 2020, présidentielles de 2022, et législatives de 2024. Les données ont été structurées par bureau de vote, avec des agrégations par blocs politiques (gauche, droite, extrême, etc.) pour faciliter les comparaisons temporelles.
+
+*Les données utilisées proviennent des sites :*
+
+  - [hub.huwise.com](https://hub.huwise.com/explore/assets/election-france-municipale-2020-premier-tour/) (Municipales 2020)
+  - [data.smartidf.services](https://data.smartidf.services/explore/dataset/elections-france-presidentielles-2022-1er-tour-par-bureau-de-vote/map/?location=8,46.83953,1.59686&basemap=ign.planv2) (Présidentielles 2022)
+  - [opendata.paris.fr](https://opendata.paris.fr/explore/dataset/elections-legislatives-2024-2emetour/information/) (Législatives 2024)
+
+  On utilisera très peu les données des législatives de 2024, car le peux de choix de candidats rend les comparaisons plus difficiles.
+
+## 2. Analyses en Composantes Principales (ACP) et ACC
+
+```{r acp, echo=FALSE, fig.cap="AFM - Évolution et Transferts des votes à Paris (Saisons 2020, 2022, 2024). Interprétation : On remarque que les choix entre les municipales de 2020 et les législatives de 2024 sont plus proches, indiquant une certaine stabilité de l'électorat parisien ; la répartition des choix pendant les présidentielles est plus indépendante."}
+#| message: false
+#| warning: false
+source("analyses_temps.r")
+```
+
+*Ce graphique est l'AFM des bureaux de vote, avec les variables représentant les blocs politiques pour les trois élections (Extrême gauche, Gauche, Centre, Droite, Extrême Droite).*
+
+**Interprétation :**
+
+* On remarque que les choix entre les municipales de 2020 et les législatives de 2024 sont plus proches, indiquant une certaine stabilité de l'électorat français. En revanche, la répartition des choix pendant les élections présidentielles est presque indépendante.
+
+```{r cca, echo=FALSE, fig.cap="CCA entre Municipales 2020 et Présidentielles 2022. Variables : blocs politiques par élection."}
+#| message: false
+#| warning: false
+df_cca <- inner_join(df_m_paris, df_p_paris, by = "id_bureau") |>
+    column_to_rownames("id_bureau")
+
+X <- df_cca |> dplyr::select(ends_with("_M20"))
+Y <- df_cca |> dplyr::select(ends_with("_P22"))
+
+res_cca_mp <- cc(X, Y)
+
+plt.cc(res_cca_mp, var.label = TRUE, type = "v")
+```
+
+**Ce graphique représente les résultats de la CCA entre les élections municipales de 2020 et présidentielles de 2022. Les variables sont les blocs politiques pour les deux élections.**
+
+**Interprétation :**
+
+* On remarque qu'entre ces deux élections, la plupart des blocs politiques sont stables. En revanche le bloc "Extrême droite semble plus décorrélé des élection municipales."
+
+## 4. Cartographie
+
+```{r cartographie, echo=FALSE, fig.cap="Carte : Orientation politique par région (Présidentielle 2022 - 1er tour). Les régions sont colorées selon un score gauche (-) / droite (+)."}
+#| message: false
+#| warning: false
+source("carte.r")
+
+ggplot(map_data) +
+  geom_sf(aes(fill = score_lr), color = "white", linewidth = 0.2) +
+  scale_fill_gradient2(
+    low      = "#CC2443",
+    mid      = "#F5F5F5",
+    high     = "#0D378A",
+    midpoint = 0,
+    limits   = c(-2, 2),
+    name     = "Score\ngauche ←→ droite"
+  ) +
+  theme_void() +
+  labs(title = "Orientation politique par région (Présidentielle 2022 - 1er tour)")
+```
+
+*Cette carte représente l'orientation politique des régions de France lors de l'élection présidentielle de 2022. Les régions sont colorées en fonction d'un score (`score_lr`) allant de rouge (gauche) à bleu (droite), avec le blanc représentant le centre.*
+
+**Interprétation :**
+
+* Sur la carte on peux remarquer que toute les régions penchent très légerement du coté droit, avec une plus grande intensité dans les régions du sud-est et du nord-est. En revanche, les régions du centre et de l'ouest sont plus proches du centre, avec des scores plus faibles.
+
+## 5. Clustering
+
+**Comparaison des méthodes de clustering : K-means, CAH Ward, CAH Complete**
+
+* Nous avons appliqué trois méthodes de clustering différentes pour segmenter les bureaux de vote en fonction de leurs profils électoraux : K-means, CAH Ward, et CAH Complete. Voici les scores de silhouette (moyenne des distances intra-cluster par rapport à la distance inter-cluster).
+
+```{r clustering_setup, echo=FALSE}
+#| message: false
+#| warning: false
+source("clustering.r")
+```
+
+```{r clustering_silhouette, echo=FALSE}
+#| message: false
+#| warning: false
+sil_km <- silhouette(km_nstart_50$cluster, dist_eucl)
+sil_ward <- silhouette(groupes_ward, dist_eucl)
+sil_complete <- silhouette(groupes_complete, dist_eucl)
+
+cat("\n--- Scores de Silhouette ---\n")
+cat("K-means       :", mean(sil_km[, 3]), "\n")
+cat("CAH Ward      :", mean(sil_ward[, 3]), "\n")
+cat("CAH Complete  :", mean(sil_complete[, 3]), "\n")
+```
+
+**Interprétation :**
+
+* La méthode de clustering qui a obtenu le meilleur score de silhouette est la méthode de CAH Ward. Et ce clustering confirme la segmentation des bureaux de vote en trois groupes distincts, correspondant à des profils électoraux différents.
+
+## 6. Régression linéaire
+
+* Nous avons également réalisé une régression linéaire pour analyser l'impact des élections municipales de 2020 sur les présidentielles de 2022.
+* On compare par
+
+```{r regression, echo=FALSE}
+#| message: false
+#| warning: false
+source("regression.r")
+df_ols <- cbind(Target_2024 = response_var, df_expl)
+```
+
+**Interprétation :**
+
+* Ici on peut observer qu'en réalité nos prédictions sont très proches de la réalité, avec un R² de 0.95. Cependant, il est important de noter que ce modèle est très simple et ne prend pas en compte d'autres facteurs qui pourraient influencer les résultats électoraux.
