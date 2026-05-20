@@ -1,0 +1,176 @@
+---
+title: "Dynamiques Électorales"
+subtitle: "2020 — 2022 — 2024"
+author: "Steeve Djoua Nem · Andre Degreave"
+format: 
+  revealjs:
+    theme: default
+    transition: slide
+    slide-number: true
+    footer: "Dynamiques Électorales · Paris"
+    css: |
+      :root {
+        --rouge: #CC2443;
+        --bleu: #0D378A;
+        --gris: #4a4a4a;
+      }
+      .reveal .slides { font-family: 'Georgia', serif; }
+      .reveal h2 {
+        font-size: 1.15em;
+        padding-bottom: 0.3em;
+      }
+      .reveal h2 .num {
+        color: var(--rouge);
+        font-weight: 900;
+        margin-right: 0.4em;
+      }
+      .reveal .slide-background-content { }
+      .pill {
+        display: inline-block;
+        background: var(--bleu);
+        color: white;
+        border-radius: 20px;
+        padding: 3px 16px;
+        font-size: 0.8em;
+        margin: 3px 2px;
+      }
+      .pill.rouge { background: var(--rouge); }
+      .pill.blanc { background: white; color: var(--bleu); border: 2px solid var(--bleu); }
+      .reveal .white-slide h2  { color: white; border-color: rgba(255,255,255,0.4); }
+      .reveal .white-slide p,
+      .reveal .white-slide li  { color: white; }
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r setup}
+source("extraction_cleaning.r")
+```
+
+## [01 ·]{.num} Introduction {background-color="#0D378A" .white-slide}
+
+::: {.columns}
+
+::: {.column width="55%"}
+### Objectif
+
+Analyser l'**évolution des comportements électoraux** parisiens sur trois scrutins et tester la capacité à **prédire** les résultats d'une élection à partir des précédentes.
+:::
+
+::: {.column width="45%"}
+### Données analysées
+
+<span class="pill rouge">Municipales 2020</span>  
+<span class="pill">Présidentielles 2022</span>  
+<span class="pill blanc">Législatives 2024</span>
+
+<br>
+Niveau de granularité : **bureau de vote**  
+Blocs : Extr. Gauche · Gauche · Centre · Droite · Extr. Droite
+:::
+
+:::
+
+---
+
+## [02 ·]{.num} AFM — Transferts de votes {background-color="#f0f4ff"}
+
+```{r acp, fig.height=5}
+source("analyses_temps.r")
+
+fviz_mfa_var(res_afm, "quanti.var", palette = "jco", repel = TRUE) +
+  labs(
+    title    = "AFM — Évolution et Transferts des votes à Paris",
+    subtitle = "Municipales 2020 · Présidentielles 2022 · Législatives 2024"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+---
+
+## [03 ·]{.num} CCA — Corrélations inter-scrutins {background-color="#fff5f7"}
+
+```{r cca, fig.height=5}
+df_cca <- inner_join(df_m_paris, df_p_paris, by = "id_bureau") |>
+  column_to_rownames("id_bureau")
+
+X <- df_cca |> dplyr::select(ends_with("_M20"))
+Y <- df_cca |> dplyr::select(ends_with("_P22"))
+
+res_cca_mp <- cc(X, Y)
+plt.cc(res_cca_mp, var.label = TRUE, type = "v")
+title(main = "Transferts électoraux : Municipales 2020 vs Présidentielle 2022")
+```
+
+---
+
+## [04 ·]{.num} Carte — Orientation régionale {background-color="#f0f4ff"}
+
+```{r cartographie, fig.height=5.5}
+source("carte.r")
+
+ggplot(map_data) +
+  geom_sf(aes(fill = score_lr), color = "white", linewidth = 0.3) +
+  scale_fill_gradient2(
+    low      = "#CC2443",
+    mid      = "#F5F5F5",
+    high     = "#0D378A",
+    midpoint = 0,
+    limits   = c(-2, 2),
+    name     = "← Gauche · Droite →"
+  ) +
+  theme_void(base_size = 12) +
+  labs(title = "Orientation politique par région · Présidentielle 2022 (1er tour)")
+```
+
+---
+
+## [05 ·]{.num} Clustering — Typologie des bureaux {background-color="#fff5f7"}
+
+```{r clustering, fig.height=5}
+source("clustering.r")
+print(plot_kmeans)
+```
+
+---
+
+## [06 ·]{.num} Régression — Prédiction des scores {background-color="#f0f4ff"}
+
+```{r regression, fig.height=4.5}
+source("regression.r")
+df_ols <- cbind(Target_2024 = response_var, df_expl)
+model_ols <- lm(Target_2024 ~ ., data = df_ols)
+cat(sprintf("R² du modèle PCR : %.3f", summary(model_pcr)$r.squared))
+```
+
+---
+
+## Conclusion {background-color="#CC2443" .white-slide}
+
+::: {.columns}
+
+::: {.column width="50%"}
+### Ce que montrent les données
+
+- Forte **stabilité** de l'électorat parisien entre 2020 et 2024
+- L'**Extrême Droite** présidentielle reste un phénomène relativement indépendant
+- Trois **profils géographiques** nets au sein de la France
+:::
+
+::: {.column width="50%"}
+### Limites & perspectives
+
+- Données législatives 2024 peu comparables (peu de candidats)
+- Piste : intégrer les **données socio-démographiques** par bureau de vote
+:::
+
+:::
+
+## Sources 
+*Les données utilisées proviennent des sites :*
+
+  - [hub.huwise.com](https://hub.huwise.com/explore/assets/election-france-municipale-2020-premier-tour/) (Municipales 2020)
+  - [data.smartidf.services](https://data.smartidf.services/explore/dataset/elections-france-presidentielles-2022-1er-tour-par-bureau-de-vote/map/?location=8,46.83953,1.59686&basemap=ign.planv2) (Présidentielles 2022)
+  - [opendata.paris.fr](https://opendata.paris.fr/explore/dataset/elections-legislatives-2024-2emetour/information/) (Législatives 2024)

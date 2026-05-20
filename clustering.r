@@ -56,9 +56,8 @@ plot_complete <- fviz_cluster(res_complete,
 # ==========================================
 # AFFICHAGE POUR LE RAPPORT (.qmd)
 # ==========================================
-print(plot_kmeans)
-print(plot_ward)
-print(plot_complete)
+
+
 
 # Calcul des scores de silhouette pour l'analyse
 sil_km <- silhouette(km_nstart_50$cluster, dist_eucl)
@@ -69,3 +68,5 @@ cat("\n--- Scores de Silhouette ---\n")
 cat("K-means       :", mean(sil_km[, 3]), "\n")
 cat("CAH Ward      :", mean(sil_ward[, 3]), "\n")
 cat("CAH Complete  :", mean(sil_complete[, 3]), "\n")
+
+print(plot_ward)

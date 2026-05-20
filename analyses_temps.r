@@ -71,6 +71,7 @@ fviz_mfa_var(res_afm, "quanti.var", palette = "jco", repel = TRUE) +
   labs(title = "AFM - Évolution et Transferts des votes à Paris",
        subtitle = "Saisons 2020 (Municipales), 2022 (Présidentielle), 2024 (Législatives)")
 
+# Execution de l'Analyse en Composantes Canoniques (ACC) entre Municipales 2020 et Présidentielle 2022
 df_cca <- inner_join(df_m_paris, df_p_paris, by = "id_bureau") |>
     column_to_rownames("id_bureau")
 
@@ -79,4 +80,4 @@ df_cca <- inner_join(df_m_paris, df_p_paris, by = "id_bureau") |>
 
     res_cca_mp <- cc(X, Y)
 
-    plt.cc(res_cca_mp, var.label = TRUE, type = "v")
+    #plt.cc(res_cca_mp, var.label = TRUE, type = "v")

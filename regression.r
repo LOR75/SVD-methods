@@ -32,7 +32,6 @@ df_expl <- df_model |> dplyr::select(-ends_with("_L24"))
 df_ols <- cbind(Target_2024 = response_var, df_expl)
 model_ols <- lm(Target_2024 ~ ., data = df_ols)
 
-print("--- Standard Linear Regression Summary ---")
 summary(model_ols)
 
 # ==========================================
@@ -43,7 +42,6 @@ svd_components <- as.data.frame(res_pca_expl$ind$coord)
 df_pcr <- cbind(Target_2024 = response_var, svd_components)
 model_pcr <- lm(Target_2024 ~ ., data = df_pcr)
 
-print("--- SVD / Principal Component Regression Summary ---")
 summary(model_pcr)
 # ==========================================
 # 4. VISUALISATIONS DES RÉSULTATS (PCR/SVD)
