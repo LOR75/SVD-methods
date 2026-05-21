@@ -28,7 +28,7 @@ mapping_partis_l <- c(
 donnees_votes_l <- data.frame()
 for (i in c(1,2,3,4,11,12,13,14,15)) {
   chemin <- paste0("./data/legislative/opendata_paris_", i, ".xlsx")
-  GET(url_opendata_gen(i), write_disk(chemin, overwrite = TRUE))
+  #GET(url_opendata_gen(i), write_disk(chemin, overwrite = TRUE))
   donnees_tmp <- read_excel(chemin) |> rename(any_of(mapping_partis_l))
   donnees_votes_l <- bind_rows(donnees_votes_l, donnees_tmp)
 }
@@ -53,7 +53,7 @@ df_pca_l <- df_clean_legis |>
 # 2. PRÉSIDENTIELLE 2022
 # ==========================================
 url_pres <- "https://data.smartidf.services/api/explore/v2.1/catalog/datasets/elections-france-presidentielles-2022-1er-tour-par-bureau-de-vote/exports/parquet?lang=fr&timezone=Europe%2FParis"
-GET(url_pres, write_disk("./data/presidentielle/donnes_votesp", overwrite = TRUE))
+#GET(url_pres, write_disk("./data/presidentielle/donnes_votesp", overwrite = TRUE))
 
 # Structuration par bureau de vote et agrégation par blocs
 df_clean_pres <- read_parquet("./data/presidentielle/donnes_votesp") |>
@@ -81,7 +81,7 @@ df_pca_p <- df_clean_pres |>
 # 3. MUNICIPALES 2020
 # ==========================================
 url_muni <- "https://hub.huwise.com/api/explore/v2.1/catalog/datasets/election-france-municipale-2020-premier-tour/exports/parquet/?lang=fr&timezone=Europe%2FParis"
-GET(url_muni, write_disk("./data/municipales/donnes_votesm", overwrite = TRUE))  
+#GET(url_muni, write_disk("./data/municipales/donnes_votesm", overwrite = TRUE))  
 
 # Fonction de catégorisation des nuances politiques
 grouper_nuances <- function(n) {

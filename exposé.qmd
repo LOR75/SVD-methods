@@ -131,7 +131,7 @@ ggplot(map_data) +
 
 ```{r clustering, fig.height=5}
 source("clustering.r")
-print(plot_kmeans)
+print(plot_complete)
 ```
 
 ---

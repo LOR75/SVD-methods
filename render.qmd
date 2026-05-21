@@ -64,9 +64,9 @@ source("carte.r")
 ggplot(map_data) +
   geom_sf(aes(fill = score_lr), color = "white", linewidth = 0.2) +
   scale_fill_gradient2(
-    low      = "#CC2443",
+    low      = "#0D378A",
     mid      = "#F5F5F5",
-    high     = "#0D378A",
+    high     = "#CC2443",
     midpoint = 0,
     limits   = c(-2, 2),
     name     = "Score\ngauche ←→ droite"
