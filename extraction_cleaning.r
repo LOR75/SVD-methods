@@ -114,3 +114,50 @@ df_pca_m <- df_clean_muni |>
 
 # Nettoyage de l'environnement de travail
 rm(list=setdiff(ls(), c("df_clean_legis", "df_clean_pres", "df_clean_muni")))
+
+# ==========================================
+# 4. UNIFORMISATION DES IDENTIFIANTS
+# ==========================================
+# Formatage des identifiants de la Ville de Paris au format INSEE standard
+df_l_paris <- df_clean_legis |>
+  mutate(
+    arrondissement = as.numeric(sub("-.*", "", ID_BVOTE)),
+    bureau = as.numeric(sub(".*-", "", ID_BVOTE)),
+    id_bureau = paste0("751", sprintf("%02d", arrondissement), "-", bureau)
+  ) |>
+  dplyr::select(-ID_BVOTE, -NB_EXPRIM, -arrondissement, -bureau) |>
+  group_by(id_bureau) |>
+  summarise(across(everything(), sum, na.rm = TRUE)) |>
+  rename_with(~paste0(., "_L24"), -id_bureau)
+
+# Fonction de traduction des codes électoraux du Ministère de l'Intérieur
+traduire_etat <- function(df) {
+  df |>
+    filter(grepl("^75056", id_bureau)) |>
+    mutate(
+      b_code = sub(".*-", "", id_bureau),
+      new_commune = paste0("751", substr(b_code, 1, 2)),
+      new_bureau = as.character(as.numeric(substr(b_code, 3, nchar(b_code)))),
+      id_bureau = paste0(new_commune, "-", new_bureau)
+    ) |>
+    dplyr::select(-b_code, -new_commune, -new_bureau) |>
+    group_by(id_bureau) |>
+    summarise(across(everything(), sum, na.rm = TRUE))
+}
+
+# Application de l'uniformisation aux jeux de données
+df_p_paris <- df_clean_pres |> 
+  dplyr::select(-exprimes) |> 
+  traduire_etat() |>
+  rename_with(~paste0(., "_P22"), -id_bureau)
+
+df_m_paris <- df_clean_muni |> 
+  dplyr::select(-total_calcule) |> 
+  traduire_etat() |>
+  rename_with(~paste0(., "_M20"), -id_bureau)
+
+# Jointure des trois années électorales par bureau de vote
+df_acc <- df_l_paris |>
+  inner_join(df_p_paris, by = "id_bureau") |>
+  inner_join(df_m_paris, by = "id_bureau") |>
+  column_to_rownames("id_bureau")

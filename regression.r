@@ -38,8 +38,8 @@ plot_predictions <- ggplot(df_pcr, aes(x = Target_Pres, y = Predictions)) +
   labs(
     title = "Performance du modèle SVD : Réalité vs Prédiction",
     subtitle = "Comparaison des scores observés et prédits",
-    x = "Scores Réels (Présidentielle)",
-    y = "Scores Prédits"
+    x = "Scores municipales",
+    y = "Scores Présidentiels"
   ) +
   theme_minimal()
 
